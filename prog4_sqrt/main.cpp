@@ -9,6 +9,7 @@
 using namespace ispc;
 
 extern void sqrtSerial(int N, float startGuess, float* values, float* output);
+extern void sqrtAvx2(int N, float initialGuess, float values[], float output[]);
 
 static void verifyResult(int N, float* result, float* gold) {
     for (int i=0; i<N; i++) {
@@ -35,6 +36,13 @@ int main() {
         
         // starter code populates array with random input values
         values[i] = .001f + 2.998f * static_cast<float>(rand()) / RAND_MAX;
+        // values[i] = 1.f + 1.0f * static_cast<float>(rand()) / RAND_MAX;
+        // if (i % 8 == 0) {
+        //     values[i] = 0.002f;
+        // } else {
+        //     values[i] = 1.0f;
+        // }
+        // values[i] = 0.1f; // 1.f / (i + 1);
     }
 
     // generate a gold version to check results
@@ -89,6 +97,25 @@ int main() {
     }
 
     printf("[sqrt task ispc]:\t[%.3f] ms\n", minTaskISPC * 1000);
+
+    verifyResult(N, output, gold);
+
+    // Clear out the buffer
+    for (unsigned int i = 0; i < N; ++i)
+        output[i] = 0;
+
+    //
+    // My AVX2 implementation
+    //
+    double minAvx2 = 1e30;
+    for (int i = 0; i < 3; ++i) {
+        double startTime = CycleTimer::currentSeconds();
+        sqrtAvx2(N, initialGuess, values, output);
+        double endTime = CycleTimer::currentSeconds();
+        minAvx2 = std::min(minAvx2, endTime - startTime);
+    }
+
+    printf("[sqrt avx2]:\t\t[%.3f] ms\n", minAvx2 * 1000);
 
     verifyResult(N, output, gold);
 

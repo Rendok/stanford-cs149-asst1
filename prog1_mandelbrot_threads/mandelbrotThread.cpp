@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <thread>
+#include <cstdlib>
+#include <chrono>
+#include <iostream>
 
 #include "CycleTimer.h"
 
@@ -35,9 +38,29 @@ void workerThreadStart(WorkerArgs * const args) {
     // program that uses two threads, thread 0 could compute the top
     // half of the image and thread 1 could compute the bottom half.
 
-    printf("Hello world from thread %d\n", args->threadId);
-}
+    // printf("Hello world from thread %d\n", args->threadId);
+    auto begin = std::chrono::steady_clock::now();
+    int halfHeight = args->height / 2;
 
+    mandelbrotSerial(
+        args->x0, args->y0, args->x1, args->y1,
+        args->width, args->height,
+        args->threadId * (halfHeight / args->numThreads), halfHeight / args->numThreads,
+        args->maxIterations,
+        args->output);
+
+    mandelbrotSerial(
+        args->x0, args->y0, args->x1, args->y1,
+        args->width, args->height,
+        (args->threadId + args->numThreads) * (halfHeight / args->numThreads), halfHeight / args->numThreads,
+        args->maxIterations,
+        args->output);
+
+    auto end = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(end - begin);
+    printf("Thread %d: Time difference = %f[ms] Start row: %d, End row: %d\n", args->threadId, duration.count(), args->threadId * (halfHeight / args->numThreads), halfHeight / args->numThreads);
+}
+    
 //
 // MandelbrotThread --
 //
