@@ -322,29 +322,24 @@ float arraySumVector(float* values, int N) {
   //
 
   __cs149_vec_float x;
-  __cs149_vec_float result;
-  __cs149_vec_int zero = _cs149_vset_int(0.f);
-  __cs149_vec_float one_float = _cs149_vset_float(1.f);
-  __cs149_vec_int one_int = _cs149_vset_int(1);
-  __cs149_mask maskAll, maskIsZero, maskIsNotZero, maskIsPositive;
+  __cs149_vec_float result = _cs149_vset_float(0.f);
+  __cs149_mask maskAll;
   
-  float sum = 0.f;
   int loops = log2(VECTOR_WIDTH);
+  maskAll = _cs149_init_ones();
 
   for (int i = 0; i < N; i += VECTOR_WIDTH) {
-    maskAll = _cs149_init_ones();
-
+   
     _cs149_vload_float(x, i + values, maskAll);
-
-    for (int j = 0; j < loops; j++) {
-      _cs149_hadd_float(x, x);
-
-      _cs149_interleave_float(x, x);
-    }
-
-    sum += x.value[0];
+    _cs149_vadd_float(result, result, x, maskAll);
   }
 
-  return sum;
+  for (int j = 0; j < loops; j++) {
+    _cs149_hadd_float(result, result);
+
+    _cs149_interleave_float(result, result);
+  }
+
+  return result.value[0];;
 }
 

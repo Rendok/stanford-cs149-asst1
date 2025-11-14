@@ -39,26 +39,23 @@ void workerThreadStart(WorkerArgs * const args) {
     // half of the image and thread 1 could compute the bottom half.
 
     // printf("Hello world from thread %d\n", args->threadId);
+    int numBlocks = 10;
     auto begin = std::chrono::steady_clock::now();
-    int halfHeight = args->height / 2;
+    int halfHeight = args->height / numBlocks;
+    int blockWidth = halfHeight / args->numThreads;
 
-    mandelbrotSerial(
-        args->x0, args->y0, args->x1, args->y1,
-        args->width, args->height,
-        args->threadId * (halfHeight / args->numThreads), halfHeight / args->numThreads,
-        args->maxIterations,
-        args->output);
-
-    mandelbrotSerial(
-        args->x0, args->y0, args->x1, args->y1,
-        args->width, args->height,
-        (args->threadId + args->numThreads) * (halfHeight / args->numThreads), halfHeight / args->numThreads,
-        args->maxIterations,
-        args->output);
+    for (int i = 0; i < numBlocks; i++) {
+        mandelbrotSerial(
+            args->x0, args->y0, args->x1, args->y1,
+            args->width, args->height,
+            (args->threadId + i * args->numThreads) * (blockWidth), blockWidth,
+            args->maxIterations,
+            args->output);
+    }
 
     auto end = std::chrono::steady_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(end - begin);
-    printf("Thread %d: Time difference = %f[ms] Start row: %d, End row: %d\n", args->threadId, duration.count(), args->threadId * (halfHeight / args->numThreads), halfHeight / args->numThreads);
+    printf("Thread %d: Time difference = %f[ms] Start row: %d, Width: %d\n", args->threadId, duration.count(), args->threadId * (blockWidth), blockWidth);
 }
     
 //
